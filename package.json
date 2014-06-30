@@ -1,5 +1,5 @@
 {
-  "name": "node-rsa",
+  "name": "node-rsa-q",
   "version": "0.1.53",
   "description": "Node.js RSA library",
   "main": "src/NodeRSA.js",
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/rzcoder/node-rsa.git"
+    "url": "https://github.com/carck/node-rsa.git"
   },
   "keywords": [
     "node",
@@ -20,12 +20,12 @@
     "sign",
     "verify"
   ],
-  "author": "rzcoder",
+  "author": "rzcoder, lance.zhou",
   "license": "BSD",
   "bugs": {
-    "url": "https://github.com/rzcoder/node-rsa/issues"
+    "url": "https://github.com/carck/node-rsa/issues"
   },
-  "homepage": "https://github.com/rzcoder/node-rsa",
+  "homepage": "https://github.com/carck/node-rsa",
   "devDependencies": {
     "grunt": "^0.4.4",
     "grunt-simple-mocha": "^0.4.0",
