@@ -14,6 +14,7 @@ var _ = require('lodash');
 var utils = require('./utils');
 
 var PUBLIC_RSA_OID = '1.2.840.113549.1.1.1';
+var PRIVATE_RSA_OID = '1.2.840.113549.1.1.1';
 
 module.exports = (function() {
     /**
@@ -21,13 +22,15 @@ module.exports = (function() {
      * @constructor
      */
     function NodeRSA(key, options) {
-        this.keyPair = new rsa.Key();
         this.$cache = {};
 
         this.options = _.merge({
             signingAlgorithm: 'sha256',
-            environment: utils.detectEnvironment()
-        }, options  || {});
+            environment: utils.detectEnvironment(),
+            padding: 'pkcs1'
+        }, options || {});
+
+        this.keyPair = new rsa.Key(this.options.padding);
 
         if (_.isObject(key)) {
             this.generateKeyPair(key.b, key.e);
@@ -81,23 +84,48 @@ module.exports = (function() {
             .replace('-----BEGIN RSA PRIVATE KEY-----','')
             .replace('-----END RSA PRIVATE KEY-----','')
             .replace(/\s+|\n\r|\n|\r$/gm, '');
-        var reader = new ber.Reader(new Buffer(pem, 'base64'));
+        var reader = new ber.Reader(new Buffer(pem, encoding));
 
         reader.readSequence();
-        reader.readString(2, true); // just zero
-        this.keyPair.setPrivate(
-            reader.readString(2, true),  // modulus
-            reader.readString(2, true),  // publicExponent
-            reader.readString(2, true),  // privateExponent
-            reader.readString(2, true),  // prime1
-            reader.readString(2, true),  // prime2
-            reader.readString(2, true),  // exponent1 -- d mod (p1)
-            reader.readString(2, true),  // exponent2 -- d mod (q-1)
-            reader.readString(2, true)   // coefficient -- (inverse of q) mod p
-        );
+        reader.readString(0x2, true);
 
+        if(reader.peek() === 0x30){
+            this.$readEncryptedPEM(reader);
+        }else{
+            //unencrypted PEM
+            this.keyPair.setPrivate(
+                reader.readString(2, true),  // modulus
+                reader.readString(2, true),  // publicExponent
+                reader.readString(2, true),  // privateExponent
+                reader.readString(2, true),  // prime1
+                reader.readString(2, true),  // prime2
+                reader.readString(2, true),  // exponent1 -- d mod (p1)
+                reader.readString(2, true),  // exponent2 -- d mod (q-1)
+                reader.readString(2, true)   // coefficient -- (inverse of q) mod p
+            );
+        }
     };
 
+    NodeRSA.prototype.$readEncryptedPEM = function(reader){
+        var header = new ber.Reader(reader.readString(0x30, true));
+        if (header.readOID(0x06, true) !== PRIVATE_RSA_OID) {
+            throw Error('Invalid PRIVATE key PEM format');
+        }
+
+        var body = new ber.Reader(reader.readString(0x04, true));
+        body.readSequence(0x30);
+        body.readString(2, true); // just zero
+        this.keyPair.setPrivate(
+            body.readString(2, true),  // modulus
+            body.readString(2, true),  // publicExponent
+            body.readString(2, true),  // privateExponent
+            body.readString(2, true),  // prime1
+            body.readString(2, true),  // prime2
+            body.readString(2, true),  // exponent1 -- d mod (p1)
+            body.readString(2, true),  // exponent2 -- d mod (q-1)
+            body.readString(2, true)   // coefficient -- (inverse of q) mod p
+        );
+    };
     /**
      * Make key form public PEM string
      *
@@ -108,7 +136,7 @@ module.exports = (function() {
             .replace('-----BEGIN PUBLIC KEY-----','')
             .replace('-----END PUBLIC KEY-----','')
             .replace(/\s+|\n\r|\n|\r$/gm, '');
-        var reader = new ber.Reader(new Buffer(pem, 'base64'));
+        var reader = new ber.Reader(new Buffer(pem, encoding));
 
         reader.readSequence();
         var header = new ber.Reader(reader.readString(0x30, true));

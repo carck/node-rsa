@@ -55,6 +55,7 @@ module.exports.Key = (function() {
     /**
      * RSA key constructor
      *
+     * padding - none/pkcs1
      * n - modulus
      * e - publicExponent
      * d - privateExponent
@@ -64,7 +65,7 @@ module.exports.Key = (function() {
      * dmq1 - exponent2 -- d mod (q-1)
      * coeff - coefficient -- (inverse of q) mod p
      */
-    function RSAKey() {
+    function RSAKey(padding) {
         this.n = null;
         this.e = 0;
         this.d = null;
@@ -73,6 +74,7 @@ module.exports.Key = (function() {
         this.dmp1 = null;
         this.dmq1 = null;
         this.coeff = null;
+        this.padding = padding;
     }
 
     /**
@@ -216,7 +218,7 @@ module.exports.Key = (function() {
         for(var i in buffers) {
             var buf = buffers[i];
 
-            var m = this.$$pkcs1pad2(buf);
+            var m = this.$$pad(buf);
 
             if (m === null) {
                 return null;
@@ -268,7 +270,7 @@ module.exports.Key = (function() {
                 return null;
             }
 
-            result.push(this.$$pkcs1unpad2(m));
+            result.push(this.$$unpad(m));
         }
 
         return Buffer.concat(result);
@@ -356,6 +358,23 @@ module.exports.Key = (function() {
         return res;
     };
 
+    RSAKey.prototype.$$pad=function(buffer){
+        if(this.padding ==='none'){
+            return this.$$rawPad(buffer);
+        }else if(this.padding==='pkcs1'){
+            return this.$$pkcs1pad2(buffer);
+        }else{
+            throw new Error('unknown padding'+ this.padding);
+        }
+    };
+
+    RSAKey.prototype.$$rawPad=function(buffer){
+        if (buffer.length > this.maxMessageLength) {
+            throw new Error("Message too long for RSA (n=" + this.encryptedDataLength + ", l=" + buffer.length + ")");
+        }
+        return new BigInteger(buffer);
+    };
+
     /**
      * PKCS#1 (type 2, random) pad input buffer to encryptedDataLength bytes, and return a bigint
      * @param buffer
@@ -383,6 +402,20 @@ module.exports.Key = (function() {
         ba.unshift(0);
 
         return new BigInteger(ba);
+    };
+
+    RSAKey.prototype.$$unpad = function (d){
+        if(this.padding ==='none'){
+            return this.$$rawUnpad(d);
+        }else if(this.padding==='pkcs1'){
+            return this.$$pkcs1unpad2(d);
+        }else{
+            throw new Error('unknown padding'+ this.padding);
+        }
+    };
+
+    RSAKey.prototype.$$rawUnpad = function(d){
+        return new Buffer(d.toByteArray());
     };
 
     /**

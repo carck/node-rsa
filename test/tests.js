@@ -311,5 +311,25 @@ describe("NodeRSA", function(){
             }
 
         });
+
+        describe("Encrypt with no padding", function(){
+            var publicKeyPEM = '-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCE1EayqAiw1hITbKu+TgXu5jPd86+iBe3aPzIoyRdLCDVvC4QWpzSyyJaJQDiNo1MveCNGh9kX9jwGGX5SVRnaAkN19ol9DkG9BPHaYLgpXBep3dM9Dit3M0AUGT1fyICVVH0ZreJHy+5jqoh23Ohr0gCWsgFLge/jTTvlxzStKwIDAQAB\n-----END PUBLIC KEY-----';
+
+            var publicKey=new NodeRSA(publicKeyPEM, {'padding':'none'});
+
+            var encrypt = publicKey.encrypt('{"app_id":800,"login_name":"aa","password":"bb","last_login_ip":""}', 'base64', 'utf-8');
+
+            assert.equal('aaLxNVrOiMJQfPivHx01VhSnm2L8gHLEqurvB3Hx7zZZTX2bIL+y1xf5q5GGXTZF2YXxuuz2APtj6DTxq3v/1ZnmVbCoScX7rwYJGnDDxlUZ4pPv7niUQap/obdGXVyp2a+OtikuH5lKkFPVczk0orXGHF/j3fs2N1Ekmz7wdok=', encrypt);
+         });
+
+        describe("DeEncrypt with no padding", function(){
+            var privateKeyPEM = '-----BEGIN RSA PRIVATE KEY-----\nMIICeAIBADANBgkqhkiG9w0BAQEFAASCAmIwggJeAgEAAoGBAITURrKoCLDWEhNsq75OBe7mM93zr6IF7do/MijJF0sINW8LhBanNLLIlolAOI2jUy94I0aH2Rf2PAYZflJVGdoCQ3X2iX0OQb0E8dpguClcF6nd0z0OK3czQBQZPV/IgJVUfRmt4kfL7mOqiHbc6GvSAJayAUuB7+NNO+XHNK0rAgMBAAECgYEAgV0IOakjRa5HTnmwzhfI+YFjlE9nhyHFI6AWptgqAl5NRAfwLevMjC6FRcixC2i8dGfJ20Ak84xRqxMbDu5ozJuzZJ6DYDwMgUrqn629UXTO4M2khfLQ17cmYiFSiR/3qYeAbWl9vewiZvy1vF4QnlIi3VOFsMDgFgNNZVCxryECQQDN9IsxVxti1nxSMmCi0nNyxe9VzBdgFonvmOEqcVRuyIAFHxiKLBqeAFLd75JDUhUaCugdEXAGwynd87ElY9LxAkEApRrsWde2pD+lPozZK5gGGHxD4nJwWC+3lEVJAGsDI2Sgrp7wuTP+s8hPovlNH4+8QAG3ddIdqGO6v6prrTDJ2wJBALXm5cVXVQXPwI/slLNaQsM9FOznTEH+xidLFJwi6lrKVV+wnkDzQTMJwCbqwHkbFy4gMe/yhcpDN0gkQvJuH1ECQEK9i2UV6eKjR6ztSqxwm6YyNU7Ia9l6EH+DMmtU1sPr3Xg5D54OApuyEV8T37UuaS6Ggx7BfPOgvNDVlwk/e5kCQQC2fbj2cBe8LgMIWaa7m6K9U4GATXxHy1wbgeeV+G7KoZ3L95/lHkB68IgDwe5LYNhNyfxacrY/Pd06dpWHV+yl\n-----END RSA PRIVATE KEY-----';
+
+            var privateKey=new NodeRSA(privateKeyPEM, {'padding':'none'});
+
+            var decrypt= privateKey.decrypt('aaLxNVrOiMJQfPivHx01VhSnm2L8gHLEqurvB3Hx7zZZTX2bIL+y1xf5q5GGXTZF2YXxuuz2APtj6DTxq3v/1ZnmVbCoScX7rwYJGnDDxlUZ4pPv7niUQap/obdGXVyp2a+OtikuH5lKkFPVczk0orXGHF/j3fs2N1Ekmz7wdok=', 'utf-8');
+
+            assert.equal('{"app_id":800,"login_name":"aa","password":"bb","last_login_ip":""}', decrypt);
+        });
     });
 });
